@@ -1,0 +1,10 @@
+[
+  "tests/test_api.py::test_health",
+  "tests/test_api.py::test_metrics_exposes_prometheus_counters",
+  "tests/test_api.py::test_predict_batch",
+  "tests/test_api.py::test_predict_negative",
+  "tests/test_api.py::test_predict_positive",
+  "tests/test_api.py::test_predict_rejects_empty_text",
+  "tests/test_api.py::test_ready",
+  "tests/test_api.py::test_root_reports_model"
+]

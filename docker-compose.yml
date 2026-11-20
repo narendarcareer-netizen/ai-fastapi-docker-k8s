@@ -1,0 +1,15 @@
+services:
+  inference:
+    build: .
+    container_name: ai-inference
+    ports:
+      - "8000:8000"
+    environment:
+      - WORKERS=1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
