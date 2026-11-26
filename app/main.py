@@ -90,13 +90,20 @@ class BatchPredictResponse(BaseModel):
     results: list[PredictResponse]
 
 
+class ExplainResponse(BaseModel):
+    label: str
+    confidence: float
+    top_tokens: list[dict]
+    model_version: str
+
+
 @app.get("/")
 def root():
     return {
         "service": "ai-inference-service",
         "model": MODEL_VERSION,
         "model_ready": model.ready,
-        "endpoints": ["/health", "/ready", "/predict", "/predict/batch", "/metrics"],
+        "endpoints": ["/health", "/ready", "/predict", "/predict/batch", "/predict/explain", "/metrics"],
     }
 
 
@@ -151,6 +158,20 @@ def predict_batch(req: BatchPredictRequest):
             )
         )
     return BatchPredictResponse(results=results)
+
+
+@app.post("/predict/explain", response_model=ExplainResponse)
+def predict_explain(req: PredictRequest):
+    """Like /predict, plus the tokens that drove the decision."""
+    if not model.ready:
+        raise HTTPException(status_code=503, detail="model not loaded")
+    label, confidence, tokens = model.explain(req.text)
+    return ExplainResponse(
+        label=label,
+        confidence=round(confidence, 4),
+        top_tokens=tokens,
+        model_version=MODEL_VERSION,
+    )
 
 
 @app.get("/metrics")

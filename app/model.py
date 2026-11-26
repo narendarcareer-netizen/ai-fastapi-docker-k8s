@@ -90,3 +90,29 @@ class SentimentModel:
         probs = self._pipeline.predict_proba([text])[0]
         idx = int(probs.argmax())
         return LABELS[idx], float(probs[idx])
+
+    def explain(self, text: str, top_k: int = 5) -> tuple[str, float, list[dict]]:
+        """Predict, plus the tokens that pushed the score toward the label.
+
+        Contribution = TF-IDF value x logistic-regression coefficient,
+        sign-flipped when the predicted class is negative so a positive
+        contribution always means "evidence for the returned label".
+        """
+        if self._pipeline is None:
+            raise RuntimeError("model not loaded")
+        tfidf = self._pipeline.named_steps["tfidf"]
+        clf = self._pipeline.named_steps["clf"]
+        features = tfidf.transform([text])
+        probs = clf.predict_proba(features)[0]
+        idx = int(probs.argmax())
+        coef = clf.coef_[0]  # binary LR: one coefficient row, class 1 vs 0
+        sign = 1.0 if idx == 1 else -1.0
+        values = features.toarray()[0] * coef * sign
+        names = tfidf.get_feature_names_out()
+        order = values.argsort()[::-1][:top_k]
+        tokens = [
+            {"token": names[i], "contribution": round(float(values[i]), 4)}
+            for i in order
+            if values[i] != 0
+        ]
+        return LABELS[idx], float(probs[idx]), tokens
