@@ -63,3 +63,36 @@ def test_metrics_exposes_prometheus_counters(client):
     assert r.status_code == 200
     assert "http_requests_total" in r.text
     assert "predict_latency_seconds" in r.text
+
+
+def test_explain_returns_top_tokens(client):
+    r = client.post(
+        "/predict/explain",
+        json={"text": "I love this product, it works perfectly"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["label"] == "positive"
+    assert body["top_tokens"], "expected at least one contributing token"
+    assert all(t["contribution"] > 0 for t in body["top_tokens"])
+
+
+def test_explain_negative_tokens(client):
+    r = client.post(
+        "/predict/explain",
+        json={"text": "Terrible quality, broke after one day"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["label"] == "negative"
+    assert body["top_tokens"]
+
+
+def test_request_id_header_present(client):
+    r = client.get("/health")
+    assert r.headers.get("X-Request-ID")
+
+
+def test_request_id_echoed_when_provided(client):
+    r = client.get("/health", headers={"X-Request-ID": "test-123"})
+    assert r.headers["X-Request-ID"] == "test-123"
