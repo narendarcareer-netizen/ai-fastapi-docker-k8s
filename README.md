@@ -28,6 +28,7 @@ resource limits, autoscaling, and a non-root container.
 | `GET /ready` | Readiness probe — model loaded, predictions will succeed |
 | `POST /predict` | `{text}` → `{label, confidence, model_version, latency_ms}` |
 | `POST /predict/batch` | Up to 100 texts in one call |
+| `POST /predict/explain` | Like `/predict`, plus the top tokens that drove the decision |
 | `GET /metrics` | Prometheus exposition: request counts, predict latency histogram |
 
 The model is a scikit-learn TF-IDF + logistic-regression classifier trained
@@ -49,8 +50,15 @@ curl -s localhost:8000/health
 curl -s -X POST localhost:8000/predict -H 'Content-Type: application/json' \
   -d '{"text": "I love this product, it works perfectly"}'
 # {"label":"positive","confidence":0.8079,"model_version":"sentiment-tfidf-lr-v1","latency_ms":1.62}
+curl -s -X POST localhost:8000/predict/explain -H 'Content-Type: application/json' \
+  -d '{"text": "I love this product, it works perfectly"}'
+# {"label":"positive","confidence":0.8079,"top_tokens":[{"token":"works","contribution":0.2321},...],"model_version":"sentiment-tfidf-lr-v1"}
 curl -s localhost:8000/metrics | grep http_requests_total
 ```
+
+Every response carries an `X-Request-ID` header (echoed back if you send
+one), and each request is logged with its id, status, and latency — handy
+when tracing a call through `kubectl logs`.
 
 ## Run it with Docker
 
@@ -79,7 +87,7 @@ scales 2 → 5 replicas at 70% average CPU.
 
 ```bash
 pytest -q
-# 8 passed
+# 12 passed
 ```
 
 ## Troubleshooting
