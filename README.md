@@ -29,6 +29,7 @@ resource limits, autoscaling, and a non-root container.
 | `POST /predict` | `{text}` → `{label, confidence, model_version, latency_ms}` |
 | `POST /predict/batch` | Up to 100 texts in one call |
 | `POST /predict/explain` | Like `/predict`, plus the top tokens that drove the decision |
+| `GET /model/info` | Model metadata: version, labels, training stats, vocabulary size |
 | `GET /metrics` | Prometheus exposition: request counts, predict latency histogram |
 
 The model is a scikit-learn TF-IDF + logistic-regression classifier trained
@@ -87,7 +88,7 @@ scales 2 → 5 replicas at 70% average CPU.
 
 ```bash
 pytest -q
-# 12 passed
+# 17 passed
 ```
 
 ## Troubleshooting
@@ -101,7 +102,7 @@ pytest -q
 
 ## Verified on this build
 
-- `pytest`: 8/8 pass (health, readiness, positive/negative prediction, batch, validation, metrics).
+- `pytest`: 17/17 pass (health, readiness, prediction, batch + edge cases, explain, model info, request-id, metrics).
 - Live smoke test: server booted, `/predict` returned the expected labels, `/metrics` exposed counters.
 - K8s manifests: YAML-validated. `docker build` / `kubectl apply` were **not**
   run in this environment (no Docker or cluster here) — run them on your own
