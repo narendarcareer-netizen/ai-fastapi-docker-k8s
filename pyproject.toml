@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+# Let plain `pytest` (as CI runs it) import the app package from the repo
+# root. Without this, only `python -m pytest` works, because the console
+# script does not put the working directory on sys.path.
+pythonpath = ["."]
+testpaths = ["tests"]
