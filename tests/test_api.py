@@ -88,6 +88,17 @@ def test_explain_negative_tokens(client):
     assert body["top_tokens"]
 
 
+def test_model_info(client):
+    r = client.get("/model/info")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["model_version"] == "sentiment-tfidf-lr-v1"
+    assert body["ready"] is True
+    assert body["labels"] == ["negative", "positive"]
+    assert body["train_samples"] > 0
+    assert body["vocabulary_size"] > 0
+
+
 def test_request_id_header_present(client):
     r = client.get("/health")
     assert r.headers.get("X-Request-ID")

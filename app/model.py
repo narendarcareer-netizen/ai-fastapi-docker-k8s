@@ -84,6 +84,21 @@ class SentimentModel:
     def ready(self) -> bool:
         return self._pipeline is not None
 
+    def info(self) -> dict:
+        """Operational metadata about the loaded model (for /model/info)."""
+        vocab = 0
+        if self._pipeline is not None:
+            vocab = len(self._pipeline.named_steps["tfidf"].vocabulary_)
+        return {
+            "model_version": MODEL_VERSION,
+            "ready": self.ready,
+            "labels": LABELS,
+            "train_samples": self.train_samples,
+            "train_seconds": round(self.train_seconds, 4),
+            "vocabulary_size": vocab,
+            "classifier": "tfidf+logistic-regression",
+        }
+
     def predict(self, text: str) -> tuple[str, float]:
         if self._pipeline is None:
             raise RuntimeError("model not loaded")

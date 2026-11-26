@@ -97,13 +97,23 @@ class ExplainResponse(BaseModel):
     model_version: str
 
 
+class ModelInfoResponse(BaseModel):
+    model_version: str
+    ready: bool
+    labels: list[str]
+    train_samples: int
+    train_seconds: float
+    vocabulary_size: int
+    classifier: str
+
+
 @app.get("/")
 def root():
     return {
         "service": "ai-inference-service",
         "model": MODEL_VERSION,
         "model_ready": model.ready,
-        "endpoints": ["/health", "/ready", "/predict", "/predict/batch", "/predict/explain", "/metrics"],
+        "endpoints": ["/health", "/ready", "/model/info", "/predict", "/predict/batch", "/predict/explain", "/metrics"],
     }
 
 
@@ -172,6 +182,16 @@ def predict_explain(req: PredictRequest):
         top_tokens=tokens,
         model_version=MODEL_VERSION,
     )
+
+
+@app.get("/model/info", response_model=ModelInfoResponse)
+def model_info():
+    """Model metadata: version, labels, training stats, vocabulary size.
+
+    Useful for debugging which model a pod is actually serving and for
+    smoke checks after a rollout — no prediction required.
+    """
+    return ModelInfoResponse(**model.info())
 
 
 @app.get("/metrics")
