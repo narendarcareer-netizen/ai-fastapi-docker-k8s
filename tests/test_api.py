@@ -57,6 +57,26 @@ def test_predict_batch(client):
     assert labels == ["positive", "negative"]
 
 
+def test_predict_batch_rejects_empty_list(client):
+    r = client.post("/predict/batch", json={"texts": []})
+    assert r.status_code == 422
+
+
+def test_predict_batch_rejects_whitespace_item(client):
+    r = client.post("/predict/batch", json={"texts": ["Great quality", "   "]})
+    assert r.status_code == 422
+
+
+def test_predict_batch_rejects_too_many_items(client):
+    r = client.post("/predict/batch", json={"texts": ["Great quality"] * 101})
+    assert r.status_code == 422
+
+
+def test_predict_rejects_oversized_text(client):
+    r = client.post("/predict", json={"text": "great " * 400})
+    assert r.status_code == 422
+
+
 def test_metrics_exposes_prometheus_counters(client):
     client.post("/predict", json={"text": "Works like a charm"})
     r = client.get("/metrics")
