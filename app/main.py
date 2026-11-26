@@ -7,7 +7,9 @@ when the model is not yet loaded.
 """
 from __future__ import annotations
 
+import logging
 import time
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -16,6 +18,12 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from pydantic import BaseModel, Field
 
 from app.model import MODEL_VERSION, SentimentModel
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger("inference")
 
 model = SentimentModel()
 
@@ -43,13 +51,23 @@ app = FastAPI(
 
 
 @app.middleware("http")
-async def count_requests(request: Request, call_next):
+async def request_context(request: Request, call_next):
+    """Attach a request id, count the request, and log one line per call."""
+    request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+    started = time.perf_counter()
     response = await call_next(request)
+    latency_ms = round((time.perf_counter() - started) * 1000, 2)
+    response.headers["X-Request-ID"] = request_id
     REQUEST_COUNT.labels(
         method=request.method,
         endpoint=request.url.path,
         status=str(response.status_code),
     ).inc()
+    logger.info(
+        "request_id=%s method=%s path=%s status=%s latency_ms=%s",
+        request_id, request.method, request.url.path,
+        response.status_code, latency_ms,
+    )
     return response
 
 
