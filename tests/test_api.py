@@ -17,6 +17,17 @@ def test_root_reports_model(client):
     assert r.json()["model_ready"] is True
 
 
+def test_version_reports_service_and_model(client):
+    r = client.get("/version")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["service"] == "ai-inference-service"
+    assert body["service_version"]
+    assert body["model_version"] == "sentiment-tfidf-lr-v1"
+    assert body["model_ready"] is True
+    assert body["uptime_seconds"] >= 0
+
+
 def test_health(client):
     assert client.get("/health").json() == {"status": "ok"}
 

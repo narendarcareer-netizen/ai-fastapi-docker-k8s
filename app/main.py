@@ -27,6 +27,9 @@ logger = logging.getLogger("inference")
 
 model = SentimentModel()
 
+SERVICE_VERSION = "1.0.0"
+_started_at = time.time()
+
 REQUEST_COUNT = Counter(
     "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status"]
 )
@@ -124,6 +127,19 @@ def root():
         "model": MODEL_VERSION,
         "model_ready": model.ready,
         "endpoints": ["/health", "/ready", "/model/info", "/predict", "/predict/batch", "/predict/explain", "/metrics"],
+    }
+
+
+@app.get("/version")
+def version():
+    """Build/version identity for rollout checks: which service build
+    and which model this pod is actually running, plus uptime."""
+    return {
+        "service": "ai-inference-service",
+        "service_version": SERVICE_VERSION,
+        "model_version": MODEL_VERSION,
+        "model_ready": model.ready,
+        "uptime_seconds": round(time.time() - _started_at, 1),
     }
 
 
