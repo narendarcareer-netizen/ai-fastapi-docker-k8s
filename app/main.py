@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.model import MODEL_VERSION, SentimentModel
 
@@ -73,6 +73,16 @@ async def request_context(request: Request, call_next):
 
 class PredictRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000, description="Text to classify")
+
+    @field_validator("text")
+    @classmethod
+    def text_must_not_be_blank(cls, value: str) -> str:
+        # min_length=1 alone lets whitespace-only strings through, which
+        # the model then "classifies" from an empty feature vector.
+        # /predict/batch already rejects blank items — match it here.
+        if not value.strip():
+            raise ValueError("text must not be blank")
+        return value
 
 
 class PredictResponse(BaseModel):

@@ -1,0 +1,21 @@
+[
+  "tests/test_api.py::test_explain_negative_tokens",
+  "tests/test_api.py::test_explain_rejects_whitespace_only_text",
+  "tests/test_api.py::test_explain_returns_top_tokens",
+  "tests/test_api.py::test_health",
+  "tests/test_api.py::test_metrics_exposes_prometheus_counters",
+  "tests/test_api.py::test_model_info",
+  "tests/test_api.py::test_predict_batch",
+  "tests/test_api.py::test_predict_batch_rejects_empty_list",
+  "tests/test_api.py::test_predict_batch_rejects_too_many_items",
+  "tests/test_api.py::test_predict_batch_rejects_whitespace_item",
+  "tests/test_api.py::test_predict_negative",
+  "tests/test_api.py::test_predict_positive",
+  "tests/test_api.py::test_predict_rejects_empty_text",
+  "tests/test_api.py::test_predict_rejects_oversized_text",
+  "tests/test_api.py::test_predict_rejects_whitespace_only_text",
+  "tests/test_api.py::test_ready",
+  "tests/test_api.py::test_request_id_echoed_when_provided",
+  "tests/test_api.py::test_request_id_header_present",
+  "tests/test_api.py::test_root_reports_model"
+]
