@@ -106,6 +106,23 @@ def test_metrics_exposes_prometheus_counters(client):
     assert "predict_latency_seconds" in r.text
 
 
+def test_predictions_total_counts_by_label(client):
+    # Label distribution is the cheapest drift signal a classifier has:
+    # a sudden swing in positive/negative share means the input changed.
+    def count(label: str) -> float:
+        for line in client.get("/metrics").text.splitlines():
+            if line.startswith(f'predictions_total{{label="{label}"}}'):
+                return float(line.rsplit(" ", 1)[1])
+        return 0.0
+
+    before_pos, before_neg = count("positive"), count("negative")
+    client.post("/predict", json={"text": "I love this product, it works perfectly"})
+    client.post("/predict/batch", json={"texts": ["Terrible quality, broke after one day"]})
+    client.post("/predict/explain", json={"text": "I love this product, it works perfectly"})
+    assert count("positive") == before_pos + 2
+    assert count("negative") == before_neg + 1
+
+
 def test_explain_returns_top_tokens(client):
     r = client.post(
         "/predict/explain",

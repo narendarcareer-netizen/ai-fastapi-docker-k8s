@@ -37,6 +37,9 @@ PREDICT_LATENCY = Histogram(
     "predict_latency_seconds", "Latency of /predict in seconds",
     buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0),
 )
+PREDICTIONS_TOTAL = Counter(
+    "predictions_total", "Predictions served, by predicted label", ["label"]
+)
 
 
 @asynccontextmanager
@@ -165,6 +168,7 @@ def predict(req: PredictRequest):
     label, confidence = model.predict(req.text)
     latency = time.perf_counter() - started
     PREDICT_LATENCY.observe(latency)
+    PREDICTIONS_TOTAL.labels(label=label).inc()
     return PredictResponse(
         label=label,
         confidence=round(confidence, 4),
@@ -185,6 +189,7 @@ def predict_batch(req: BatchPredictRequest):
         label, confidence = model.predict(text)
         latency = time.perf_counter() - started
         PREDICT_LATENCY.observe(latency)
+        PREDICTIONS_TOTAL.labels(label=label).inc()
         results.append(
             PredictResponse(
                 label=label,
@@ -202,6 +207,7 @@ def predict_explain(req: PredictRequest):
     if not model.ready:
         raise HTTPException(status_code=503, detail="model not loaded")
     label, confidence, tokens = model.explain(req.text)
+    PREDICTIONS_TOTAL.labels(label=label).inc()
     return ExplainResponse(
         label=label,
         confidence=round(confidence, 4),
